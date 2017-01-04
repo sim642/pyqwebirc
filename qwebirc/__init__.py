@@ -30,12 +30,23 @@ class Client:
         self.request("p", s=self.s, c=msg)
 
     def receive(self):
-        items = self.request("s", s=self.s)
-        return list(map(Client.stringify_msg, filter(Client.is_msg, items)))
+        return self.request("s", s=self.s)
+
+    def __iter__(self):
+        while True:
+            for item in self.receive():
+                if Client.is_msg(item):
+                    yield Client.stringify_msg(item)
+                elif Client.is_disconnect(item):
+                    return
 
     @staticmethod
     def is_msg(item):
         return isinstance(item, list) and item[0] == "c"
+
+    @staticmethod
+    def is_disconnect(item):
+        return isinstance(item, list) and item[0] == "disconnect"
 
     @staticmethod
     def stringify_msg(item):
