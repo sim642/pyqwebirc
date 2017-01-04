@@ -46,8 +46,16 @@ class Client:
             str += ":{} ".format(prefix)
         str += command
         if args:
-            if len(args) > 1:
-                str += " " + " ".join(args[:-1])
-            str += " :{}".format(args[-1])
+            if " " in args[-1]:
+                params = args[:-1]
+                trailing = args[-1]
+            else:
+                params = args
+                trailing = None
+
+            if params:
+                str += " " + " ".join(params)
+            if trailing:
+                str += " :{}".format(trailing)
 
         return str
