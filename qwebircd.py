@@ -31,9 +31,11 @@ class IRCHandler(socketserver.StreamRequestHandler):
                 print("<--", msg)
                 self.wfile.write(bytes(msg + "\r\n", "utf8"))
 
-
-class ReusingTCPServer(socketserver.TCPServer):
+class ReusingMixIn:
     allow_reuse_address = True
 
-server = ReusingTCPServer(("", 6667), IRCHandler)
+class ReusingThreadingTCPServer(ReusingMixIn, socketserver.ThreadingTCPServer):
+    pass
+
+server = ReusingThreadingTCPServer(("", 6667), IRCHandler)
 server.serve_forever()
