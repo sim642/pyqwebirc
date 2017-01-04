@@ -10,6 +10,8 @@ NICK = "pyqwebircd"
 
 class IRCHandler(socketserver.StreamRequestHandler):
     def handle(self):
+        self.log("connected")
+
         self.client = qwebirc.Client(QWEBIRC_URL)
         self.client.connect(NICK + str(random.randint(1, 1000)))
 
@@ -22,17 +24,23 @@ class IRCHandler(socketserver.StreamRequestHandler):
         self.irc_thread.join()
         self.client_thread.join()
 
+        self.log("disconnected")
+
     def irc_loop(self):
         for msg in self.rfile:
             msg = msg.strip()
-            print("-->", str(msg, "utf8"))
+            self.log("-->", str(msg, "utf8"))
             self.client.send(msg)
 
     def client_loop(self):
         for msg in self.client:
-            print("<--", msg)
+            self.log("<--", msg)
             self.wfile.write(bytes(msg + "\r\n", "utf8"))
         self.connection.close() # close IRC connection if disconnect was server side
+
+    def log(self, *args):
+        ip, port = self.client_address
+        print("{}:{}".format(ip, port), *args, sep="\t")
 
 class ReusingMixIn:
     allow_reuse_address = True
