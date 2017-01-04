@@ -1,5 +1,7 @@
 import requests
-import time
+import socketserver
+import threading
+import random
 
 BASE_URL = "https://qwebirc.swiftirc.net/e/"
 S_URL = BASE_URL + "s"
@@ -17,9 +19,10 @@ def connect(nick):
     t += 1
     return r.json()[1]
 
-s = connect(nick)
+# s = connect(nick)
 
 def send(msg):
+    print(msg)
     global t
     r = requests.post(P_URL, params={"r": cache_avoidance, "t": t}, data={"s": s, "c": msg})
     t += 1
@@ -45,13 +48,40 @@ def recv():
                     st += " " + " ".join(args[:-1])
                 st += " :" + args[-1]
             out.append(st)
+            print(st)
     return out
 
+# send("MODE {} +x".format(nick))
+# send("JOIN #sim")
 
-print(recv())
-send("MODE {} +x".format(nick))
-send("JOIN #sim ")
 
-while True:
-    print(recv())
-    # time.sleep(3)
+class Handler(socketserver.StreamRequestHandler):
+    def handle(self):
+        global s
+        s = connect(nick + str(random.randint(1, 1000)))
+        irc = threading.Thread(target=self.irc)
+        qwebirc = threading.Thread(target=self.qwebirc)
+
+        irc.start()
+        qwebirc.start()
+
+        irc.join()
+
+    def irc(self):
+        while True:
+            data = self.rfile.readline()
+            send(data)
+
+    def qwebirc(self):
+        while True:
+            for line in recv():
+                self.wfile.write(bytes(line + "\r\n", "utf-8"))
+
+class Server(socketserver.TCPServer):
+    def __init__(self, server_address, RequestHandlerClass, bind_and_activate=True):
+        self.allow_reuse_address = True
+        super().__init__(server_address, RequestHandlerClass, bind_and_activate)
+
+
+server = Server(("", 6667), Handler)
+server.serve_forever()
