@@ -21,8 +21,8 @@ class IRCHandler(socketserver.StreamRequestHandler):
 
     def irc_loop(self):
         while True:
-            msg = self.rfile.readline()
-            print("-->", msg)
+            msg = self.rfile.readline().strip()
+            print("-->", str(msg, "utf8"))
             self.client.send(msg)
 
     def client_loop(self):
