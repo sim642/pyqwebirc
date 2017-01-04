@@ -2,13 +2,16 @@ import socketserver
 import qwebirc
 import random
 import threading
+import socketserver_extra
 
 # QWEBIRC_URL = "https://qwebirc.swiftirc.net"
 # QWEBIRC_URL = "https://qwebirc.afternet.org"
 QWEBIRC_URL = "http://irc.w3.org"
 NICK = "pyqwebircd"
 
-class IRCHandler(socketserver.StreamRequestHandler):
+class IRCHandler(socketserver_extra.TextStreamRequestHandler):
+    wnewline = "\r\n"
+
     def handle(self):
         self.log("connected")
 
@@ -29,24 +32,19 @@ class IRCHandler(socketserver.StreamRequestHandler):
     def irc_loop(self):
         for msg in self.rfile:
             msg = msg.strip()
-            self.log("-->", str(msg, "utf8"))
+            self.log("-->", msg)
             self.client.send(msg)
 
     def client_loop(self):
         for msg in self.client:
             self.log("<--", msg)
-            self.wfile.write(bytes(msg + "\r\n", "utf8"))
+            self.wfile.write(msg + "\n")
+            self.wfile.flush()
         self.connection.close() # close IRC connection if disconnect was server side
 
     def log(self, *args):
         ip, port = self.client_address
         print("{}:{}".format(ip, port), *args, sep="\t")
 
-class ReusingMixIn:
-    allow_reuse_address = True
-
-class ReusingThreadingTCPServer(ReusingMixIn, socketserver.ThreadingTCPServer):
-    pass
-
-server = ReusingThreadingTCPServer(("", 6667), IRCHandler)
+server = socketserver_extra.ReusingThreadingTCPServer(("", 6667), IRCHandler)
 server.serve_forever()
