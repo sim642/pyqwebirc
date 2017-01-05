@@ -36,7 +36,8 @@ class IRCHandler(socketserver_extra.TextStreamRequestHandler):
             self.client.send(msg)
 
     def client_loop(self):
-        for msg in self.client:
+        for response in self.client:
+            msg = str(response)
             self.log("<--", msg)
             self.wfile.write(msg + "\n")
             self.wfile.flush()
